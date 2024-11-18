@@ -5,13 +5,9 @@ set(CMAKE_CXX_STANDARD 26)
 
 add_executable(RocketModel main.cpp)
 
-add_subdirectory(libs src)
+add_subdirectory(src)
+add_subdirectory(lib)
 
-target_include_directories(${PROJECT_NAME}
+target_include_directories( RocketModel
         PRIVATE .
 )
-
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE gpdrawer
-)
-

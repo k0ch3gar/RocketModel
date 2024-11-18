@@ -1,61 +1,67 @@
 #include <iostream>
 #include <raylib.h>
 #include <vector>
-#include <src/GraphDrawer.hpp>
+#include <cmath>
+#include <GraphDrawer.h>
+#include <Window.h>
+#include <Rocket.h>
+#include <Button.h>
 
 int main() {
-    // Инициализация окна
-    const int screenWidth = 800;
+
+    const int screenWidth = 1600;
     const int screenHeight = 600;
-    InitWindow(screenWidth, screenHeight, "График: Скорость от времени");
+    Window mainWindow(screenWidth, screenHeight, "RocketModel");
 
-    // Данные для графика
-    std::vector<float> times = {0, 1, 2, 3, 4, 5}; // Время
-    std::vector<float> speeds = {0, 10, 20, 15, 30, 25}; // Скорость
+    GraphDrawerBuilder builder;
+    GraphDrawer testGraph = builder
+    .AddColor(WHITE)
+    ->AddHeight(490)
+    ->AddWidth(400)
+    ->AddXMax(160)
+    ->AddYMax(10)
+    ->AddXPartition(7)
+    ->AddYPartition(15)
+    ->AddXUnit("h, (km)")
+    ->AddYUnit("V, (km/c)")
+    ->AddGraphFunction([](float x) {return x * 2.0f;})
+    ->Build();
 
-    // Настройки графика
-    const int graphWidth = 600;   // Ширина графика
-    const int graphHeight = 400; // Высота графика
-    const int graphX = 100;      // Смещение по X
-    const int graphY = 500;      // Смещение по Y (нижняя граница)
-    const float maxSpeed = 40;   // Максимальная скорость (для масштаба)
-    const float maxTime = 5;     // Максимальное время (для масштаба)
+    testGraph.FullMode(false);
+
+    Button startButton({ screenWidth / 2 - 150, screenHeight - 100, 100, 50}, "START");
+
+    RocketBuilder rocketBuilder;
+    Rocket rocket = rocketBuilder
+    .AddGasVelocity(4.0f)
+    ->AddMassVelocity(1e7  * 0.25)
+    ->AddCriticalMass(1e7 * 0.03)
+    ->AddMass(1e7)
+    ->AddTimePerFrame(1.0f)
+    ->AddRadius(25.0f)
+    ->Build();
 
     SetTargetFPS(60);
+    mainWindow.AddDrawable(testGraph, 100, 500);
+    mainWindow.AddDrawable(rocket, 1000, 250);
+    mainWindow.AddDrawable(startButton, 1000, 500);
+
+    bool isStarted = false;
+    float time = 0;
 
     while (!WindowShouldClose()) {
-        BeginDrawing();
-        ClearBackground(RAYWHITE);
-
-        // Рисуем оси
-        DrawLine(graphX, graphY, graphX + graphWidth, graphY, BLACK); // Ось X
-        DrawLine(graphX, graphY, graphX, graphY - graphHeight, BLACK); // Ось Y
-
-        // Подписи осей
-        DrawText("Time", graphX + graphWidth + 10, graphY, 20, BLACK);
-        DrawText("Speed", graphX - 50, graphY - graphHeight - 10, 20, BLACK);
-
-        // Рисуем данные графика
-        for (size_t i = 0; i < times.size() - 1; ++i) {
-            // Преобразуем координаты в пиксели
-            float x1 = graphX + (times[i] / maxTime) * graphWidth;
-            float y1 = graphY - (speeds[i] / maxSpeed) * graphHeight;
-            float x2 = graphX + (times[i + 1] / maxTime) * graphWidth;
-            float y2 = graphY - (speeds[i + 1] / maxSpeed) * graphHeight;
-
-            DrawLine(x1, y1, x2, y2, RED); // Соединяем точки линией
+        Vector2 mousePoint = GetMousePosition();
+        if (startButton.checkCollision(mousePoint) && IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
+            isStarted = true;
         }
-
-        // Рисуем точки
-        for (size_t i = 0; i < times.size(); ++i) {
-            float x = graphX + (times[i] / maxTime) * graphWidth;
-            float y = graphY - (speeds[i] / maxSpeed) * graphHeight;
-            DrawCircle(x, y, 5, BLUE); // Отмечаем точки на графике
+        mainWindow.Render();
+        if (isStarted) {
+            time += 0.1f;
+            rocket.Update();
+            testGraph.AddPoint(rocket.getHeight(), rocket.getVelocity());
         }
-
-        EndDrawing();
     }
 
-    CloseWindow(); // Закрываем окно
+    CloseWindow();
     return 0;
 }
