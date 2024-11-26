@@ -20,13 +20,17 @@ public:
 
     void Draw(uint32_t posX, uint32_t posY) const override;
 
-    double getResForce();
+    double getResForce() const;
 
-    double getGravForce();
+    double getGravForce() const;
 
     double getHeight() { return height; }
 
     double getVelocity() { return velocity; }
+
+    double getForce() { if (height == 0 && !isFlying) return 0; return (isFlying ? massVelocity * gasVelocity : 0 ) - getResForce() - getGravForce(); }
+
+    double getMass() { return mass; }
 
     void Update();
 
@@ -44,6 +48,7 @@ private:
     double gasVelocity;
     double timePerFrame;
     double velocity = 0;
+    double counter = 0;
 
     double Cd = 0.82f;
     double area;

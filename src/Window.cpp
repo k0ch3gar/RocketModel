@@ -15,6 +15,7 @@ Window::Window(uint32_t width, uint32_t height, std::string title) : width(width
 
 Window::~Window() {
     drawables.clear();
+    CloseWindow();
 }
 
 void Window::Render() const {

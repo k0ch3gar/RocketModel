@@ -19,10 +19,12 @@ public:
                 std::string xUnit, std::string yUnit,
                 std::function<float(float)> graphFunction,
                 Color color,
-                float xMax, float yMax) :
+                float xMax, float yMax,
+                float xMin, float yMin) :
                 width(width), height(height),
                 xPartition(xPartition), yPartition(yPartition),
                 xMax(xMax), yMax(yMax),
+                xMin(xMin), yMin(yMin),
                 xUnit(std::move(xUnit)),
                 yUnit(std::move(yUnit)),
                 color(color), graphFunction(std::move(graphFunction)) {}
@@ -51,6 +53,9 @@ private:
     float xMax;
     float yMax;
 
+    float xMin;
+    float yMin;
+
     std::string xUnit;
     std::string yUnit;
 
@@ -77,6 +82,10 @@ public:
 
     GraphDrawerBuilder* AddYMax(float yMax);
 
+    GraphDrawerBuilder* AddXMin(float xMin);
+
+    GraphDrawerBuilder* AddYMin(float yMin);
+
     GraphDrawerBuilder* AddGraphFunction(std::function<float(float)> graphFunction);
 
     GraphDrawerBuilder* AddColor(Color color);
@@ -98,6 +107,11 @@ private:
     bool xMaxInitialized = false;
     float yMax;
     bool yMaxInitialized = false;
+
+    float xMin;
+    bool xMinInitialized = false;
+    float yMin;
+    bool yMinInitialized = false;
 
     std::string xUnit;
     bool xUnitInitialized = false;

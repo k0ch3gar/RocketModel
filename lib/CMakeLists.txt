@@ -1,29 +1,18 @@
+include(FetchContent)
 
-
-target_include_directories( RocketModel
-        PRIVATE raylib/include
+FetchContent_Declare(
+        raylib
+        GIT_REPOSITORY https://github.com/raysan5/raylib.git
 )
 
-target_link_directories( RocketModel
-        PRIVATE raylib/lib
-)
+FetchContent_MakeAvailable(raylib)
 
 target_link_libraries( RocketModel
-        PRIVATE libraylib.a
-        PRIVATE raylib.a
+        PRIVATE raylib
         PRIVATE Winmm
 )
 
-target_include_directories( model
-        PRIVATE raylib/include
-)
-
-target_link_directories( model
-        PRIVATE raylib/lib
-)
-
 target_link_libraries( model
-        PRIVATE libraylib.a
-        PRIVATE raylib.a
+        PRIVATE raylib
         PRIVATE Winmm
 )

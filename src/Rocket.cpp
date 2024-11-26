@@ -7,7 +7,7 @@
 
 Rocket::Rocket(const std::string &pathToRocketSprite, const std::string &pathToFireSprite,
                const std::string &pathToBgPath, double mass, double criticalMass, double massVelocity, double gasVelocity,
-               double timePerFrame, double radius) : mass(mass), criticalMass(criticalMass), massVelocity(massVelocity), gasVelocity(gasVelocity), timePerFrame(timePerFrame), area(radius * radius * std::numbers::pi) {
+               double timePerFrame, double radius) : mass(mass), criticalMass(criticalMass), massVelocity(massVelocity), gasVelocity(gasVelocity), timePerFrame(timePerFrame), area(radius * radius * std::numbers::pi / 1000.0) {
 
     auto rocketImage = LoadImage(pathToRocketSprite.c_str());
     auto fireImage = LoadImage(pathToFireSprite.c_str());
@@ -35,17 +35,17 @@ void Rocket::Draw(uint32_t posX, uint32_t posY) const {
     }
 }
 
-double Rocket::getResForce() {
+double Rocket::getResForce() const {
     double B = 5.6e-2;
-    double p0 = 129.0;
+    double p0 = 129;
     double p = p0 * std::pow(10, -B * height);
     double k2 = 0.5 * area * p * 0.5;
     return k2 * pow(velocity, 2);
 }
 
 
-double Rocket::getGravForce() {
-    double G = 9.8;
+double Rocket::getGravForce() const {
+    double G = 9.8 * 0.2;
     double M = 2e5;
     double R = 6378.0;
     return G * M * mass / pow(R + height, 2.0);
@@ -60,11 +60,18 @@ void Rocket::Update() {
     }
 
     double dv = ( (isFlying ? massVelocity * gasVelocity : 0 ) - getResForce() - getGravForce()) / mass * timePerFrame;
+    if (height == 0 && dv < 0) dv = 0;
     velocity += dv;
     rocketY += velocity * timePerFrame;
     rocketY = std::clamp(rocketY, 200.0, (double)bgSprite.height - 250.0);
     if (rocketY >= bgSprite.height - 250.0) {
         rocketY = bgSprite.height - 903.0;
+        ++counter;
+    }
+    if (rocketY < bgSprite.height - 903.0 && counter > 0 && velocity < 0) {
+        rocketY = bgSprite.height - 250.0;
+        --counter;
     }
     height += velocity * timePerFrame;
+    height = std::max(height, 0.0);
 }

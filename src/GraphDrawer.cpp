@@ -1,5 +1,7 @@
 #include "GraphDrawer.h"
 
+#include <iomanip>
+#include <ios>
 #include <raylib.h>
 #include <stdexcept>
 
@@ -9,38 +11,80 @@ void GraphDrawer::Draw(uint32_t posX, uint32_t posY) const {
     DrawText(xUnit.c_str(), posX + width, posY - 10.0f, 20, color);
     DrawText(yUnit.c_str(), posX, posY - height - 20.0f, 20, color);
 
-    for (float x = 0; x <= xMax; x += xMax / (float)xPartition) {
-        DrawText(std::to_string(x).c_str(), posX + x * width / xMax, posY + 10, 10, color);
-        DrawLine(posX + x * width / xMax, posY + 10, posX + x * width / xMax, posY - 10, color);
+    float xChange = (float) width / (float) (xMax - xMin);
+    float yChange = (float) height / (float)(yMax - yMin);
+
+    float i = 0;
+    for (float x = xMin; x <= xMax; x += (xMax - xMin) / static_cast<float>(xPartition)) {
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << x;
+        std::string s = stream.str();
+
+        DrawText(s.c_str(), posX + i * (float)width / xPartition, posY + 10, 10, color);
+        DrawLine(posX + i * (float)width / xPartition, posY + 10, posX + i * (float)width / xPartition, posY - 10, color);
+        ++i;
     }
 
-    for (float y = 0; y <= yMax; y += yMax / (float)yPartition) {
-        DrawText(std::to_string(y).c_str(), posX - std::to_string(y).size() * 8, posY - y * height / yMax, 10, color);
-        DrawLine(posX + 10, posY - y * height / yMax, posX - 10, posY - y * height / yMax, color);
+    i = 0;
+    for (float y = yMin; y <= yMax; y += (yMax - yMin) / static_cast<float>(yPartition)) {
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << y;
+        std::string s = stream.str();
+
+        DrawText(s.c_str(), posX - std::to_string(y).size() * 8, posY - i * (float)height / yPartition, 10, color);
+        DrawLine(posX + 10, posY - i * (float)height / yPartition, posX - 10, posY - i * (height) / yPartition, color);
+        ++i;
     }
 
-    float xChange = (float)width / (float)xMax;
-    float yChange = (float)height / (float)yMax;
+
 
     if (!fullDraw) {
-        float prevX = posX;
-        float prevY = posY;
+        if (points.empty()) return;
+        float prevX = (float)posX + (abs(xMin) + points.at(0).x) * xChange;
+        float prevY = (float)posY - (abs(yMin) + points.at(0).y) * yChange;
         for (const auto& vec2 : points) {
-            DrawLine(prevX, prevY, (float)posX + vec2.x * xChange, (float)posY - vec2.y * yChange, color);
-            prevX = (float)posX + vec2.x * xChange;
-            prevY = (float)posY - vec2.y * yChange;
-            //DrawPixel((float)posX + vec2.x * xChange, (float)posY - vec2.y * yChange, color);
+
+            DrawLine(prevX, prevY, (float)posX + (vec2.x + abs(xMin)) * xChange, (float)posY - (vec2.y + abs(yMin)) * yChange, color);
+            prevX = (float)posX + (vec2.x + abs(xMin)) * xChange;
+            prevY = (float)posY - (vec2.y + abs(yMin)) * yChange;
         }
+        auto vec2 = *points.rbegin();
+        std::stringstream stream;
+        stream << std::fixed << std::setprecision(2) << vec2.x;
+        std::string s = stream.str();
+
+        DrawText(s.c_str(), prevX + 10, prevY, 10, color);
+        stream.clear();
+        stream << std::fixed << std::setprecision(2) << vec2.y;
+        s = stream.str();
+
+        DrawText(s.c_str(), prevX, prevY + 10, 10, color);
         return;
     }
 
     for (float x = 0; x < xMax; x += 0.1f) {
         float y = graphFunction(x);
-        DrawPixel((float)posX + x * xChange, (float)posY - y * yChange, color);
+        DrawPixel((float)posX + x + abs(xMin), (float)posY - y + abs(yMin), color);
     }
 }
 
 void GraphDrawer::AddPoint(float x, float y) {
+    if (x > xMax * 0.9f) {
+        if (xMax == 0) xMax += 1.0;
+        xMax *= 1.5f;
+    }
+    if (y > yMax * 0.9f) {
+        if (yMax == 0) yMax += 1.0;
+        yMax *= 1.5f;
+    }
+    if (x < xMin * 0.9f) {
+        if (xMin == 0) xMin -= 1.0;
+        xMin *= 2.5f;
+    }
+    if (y < yMin * 0.9f) {
+        if (yMin == 0) yMin -= 1.0;
+        yMin *= 2.5f;
+    }
     points.emplace_back(x, y);
 }
 
@@ -96,6 +140,18 @@ GraphDrawerBuilder *GraphDrawerBuilder::AddYMax(float yMax) {
     return this;
 }
 
+GraphDrawerBuilder * GraphDrawerBuilder::AddXMin(float xMin) {
+    this->xMin = xMin;
+    xMinInitialized = true;
+    return this;
+}
+
+GraphDrawerBuilder * GraphDrawerBuilder::AddYMin(float yMin) {
+    this->yMin = yMin;
+    yMinInitialized = true;
+    return this;
+}
+
 GraphDrawerBuilder *GraphDrawerBuilder::AddGraphFunction(std::function<float(float)> graphFunction) {
     this->graphFunction = std::move(graphFunction);
     graphFunctionInitialized = true;
@@ -117,5 +173,5 @@ GraphDrawer GraphDrawerBuilder::Build() {
         throw std::invalid_argument("GraphDrawerBuilder could not be initialized");
     }
 
-    return {width, height, xPartition, yPartition, xUnit, yUnit, graphFunction, color, xMax, yMax};
+    return {width, height, xPartition, yPartition, xUnit, yUnit, graphFunction, color, xMax, yMax, xMin, yMin};
 }
